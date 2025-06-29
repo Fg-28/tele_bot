@@ -1,2 +1,1 @@
-flask
-requests
+web: python main.py
