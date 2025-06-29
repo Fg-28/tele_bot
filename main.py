@@ -4,6 +4,8 @@ import os
 
 BOT_TOKEN = os.getenv("TELEGRAM_TOKEN")
 
+print("TOKEN CHECK:", repr(BOT_TOKEN))  # <-- Moved here
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         """Thanks for visiting VenusBot! 🤖
@@ -31,5 +33,3 @@ app.add_handler(CommandHandler("summary", summary))
 app.add_handler(CommandHandler("last10", last10))
 
 app.run_polling()
-print("TOKEN CHECK:", repr(BOT_TOKEN))
-
