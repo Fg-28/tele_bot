@@ -1,35 +1,49 @@
-from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+from flask import Flask, request
+import requests
 import os
 
-BOT_TOKEN = os.getenv("TELEGRAM_TOKEN")
+app = Flask(__name__)
 
-print("TOKEN CHECK:", repr(BOT_TOKEN))  # <-- Moved here
+TOKEN = os.getenv("TELEGRAM_TOKEN")
+TELEGRAM_API = f"https://api.telegram.org/bot{TOKEN}"
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        """Thanks for visiting VenusBot! 🤖
+@app.route('/')
+def home():
+    return "VenusBot is running!"
+
+@app.route(f"/{TOKEN}", methods=["POST"])
+def webhook():
+    data = request.get_json()
+
+    if "message" in data:
+        chat_id = data["message"]["chat"]["id"]
+        text = data["message"].get("text", "").lower()
+
+        if text == "/start":
+            reply = """Thanks for visiting VenusBot! 🤖
 
 Here are the available triggers:
 
 🔹 /top10 — Top 10 highest expense branches  
 🔹 /summary — Summary report  
 🔹 /last10 — Least expense branches"""
-    )
+        elif text == "/top10":
+            reply = "🧾 Top 10 branches by expenses:\n1. Branch A...\n(etc...)"
+        elif text == "/summary":
+            reply = "📊 Expense Summary:\nTotal: ₹X\nCleared: ₹Y\nPending: ₹Z"
+        elif text == "/last10":
+            reply = "💸 Least 10 expense branches:\n1. Branch Z...\n(etc...)"
+        else:
+            reply = "❓ Unknown command. Type /start to see options."
 
-async def top10(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("🧾 Top 10 branches by expenses:\n1. Branch A...\n(etc...)")
+        requests.post(f"{TELEGRAM_API}/sendMessage", json={
+            "chat_id": chat_id,
+            "text": reply
+        })
 
-async def summary(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("📊 Expense Summary:\nTotal: ₹X\nCleared: ₹Y\nPending: ₹Z")
+    return "ok", 200
 
-async def last10(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("💸 Least 10 expense branches:\n1. Branch Z...\n(etc...)")
-
-app = ApplicationBuilder().token(BOT_TOKEN).build()
-app.add_handler(CommandHandler("start", start))
-app.add_handler(CommandHandler("top10", top10))
-app.add_handler(CommandHandler("summary", summary))
-app.add_handler(CommandHandler("last10", last10))
-
-app.run_polling()
+# 🚨 REQUIRED for Railway to work:
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
