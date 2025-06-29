@@ -31,3 +31,5 @@ app.add_handler(CommandHandler("summary", summary))
 app.add_handler(CommandHandler("last10", last10))
 
 app.run_polling()
+print("TOKEN CHECK:", repr(BOT_TOKEN))
+
